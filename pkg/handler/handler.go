@@ -21,6 +21,7 @@ var getDB = entity.GetDB
 // Setup initialize all the handler functions
 func Setup(api *operations.FlagrAPI) {
 	if config.Config.EvalOnlyMode {
+		setupCRUD(api, true)
 		setupHealth(api)
 		setupEvaluation(api)
 		return
@@ -28,42 +29,58 @@ func Setup(api *operations.FlagrAPI) {
 
 	setupHealth(api)
 	setupEvaluation(api)
-	setupCRUD(api)
+	setupCRUD(api, false)
 	setupExport(api)
 }
 
-func setupCRUD(api *operations.FlagrAPI) {
+func setupCRUD(api *operations.FlagrAPI, readOnly bool) {
 	c := NewCRUD()
+
 	// flags
 	api.FlagFindFlagsHandler = flag.FindFlagsHandlerFunc(c.FindFlags)
-	api.FlagCreateFlagHandler = flag.CreateFlagHandlerFunc(c.CreateFlag)
 	api.FlagGetFlagHandler = flag.GetFlagHandlerFunc(c.GetFlag)
-	api.FlagPutFlagHandler = flag.PutFlagHandlerFunc(c.PutFlag)
-	api.FlagDeleteFlagHandler = flag.DeleteFlagHandlerFunc(c.DeleteFlag)
-	api.FlagSetFlagEnabledHandler = flag.SetFlagEnabledHandlerFunc(c.SetFlagEnabledState)
 	api.FlagGetFlagSnapshotsHandler = flag.GetFlagSnapshotsHandlerFunc(c.GetFlagSnapshots)
 	api.FlagGetFlagEntityTypesHandler = flag.GetFlagEntityTypesHandlerFunc(c.GetFlagEntityTypes)
 
 	// segments
-	api.SegmentCreateSegmentHandler = segment.CreateSegmentHandlerFunc(c.CreateSegment)
 	api.SegmentFindSegmentsHandler = segment.FindSegmentsHandlerFunc(c.FindSegments)
+
+	// constraints
+	api.ConstraintFindConstraintsHandler = constraint.FindConstraintsHandlerFunc(c.FindConstraints)
+
+	// distributions
+	api.DistributionFindDistributionsHandler = distribution.FindDistributionsHandlerFunc(c.FindDistributions)
+
+	// variants
+	api.VariantFindVariantsHandler = variant.FindVariantsHandlerFunc(c.FindVariants)
+
+	// Return early if we only get read-only CRUD operations
+	if readOnly {
+		return
+	}
+
+	// flags
+	api.FlagCreateFlagHandler = flag.CreateFlagHandlerFunc(c.CreateFlag)
+	api.FlagPutFlagHandler = flag.PutFlagHandlerFunc(c.PutFlag)
+	api.FlagDeleteFlagHandler = flag.DeleteFlagHandlerFunc(c.DeleteFlag)
+	api.FlagSetFlagEnabledHandler = flag.SetFlagEnabledHandlerFunc(c.SetFlagEnabledState)
+
+	// segments
+	api.SegmentCreateSegmentHandler = segment.CreateSegmentHandlerFunc(c.CreateSegment)
 	api.SegmentPutSegmentHandler = segment.PutSegmentHandlerFunc(c.PutSegment)
 	api.SegmentDeleteSegmentHandler = segment.DeleteSegmentHandlerFunc(c.DeleteSegment)
 	api.SegmentPutSegmentsReorderHandler = segment.PutSegmentsReorderHandlerFunc(c.PutSegmentsReorder)
 
 	// constraints
 	api.ConstraintCreateConstraintHandler = constraint.CreateConstraintHandlerFunc(c.CreateConstraint)
-	api.ConstraintFindConstraintsHandler = constraint.FindConstraintsHandlerFunc(c.FindConstraints)
 	api.ConstraintPutConstraintHandler = constraint.PutConstraintHandlerFunc(c.PutConstraint)
 	api.ConstraintDeleteConstraintHandler = constraint.DeleteConstraintHandlerFunc(c.DeleteConstraint)
 
 	// distributions
-	api.DistributionFindDistributionsHandler = distribution.FindDistributionsHandlerFunc(c.FindDistributions)
 	api.DistributionPutDistributionsHandler = distribution.PutDistributionsHandlerFunc(c.PutDistributions)
 
 	// variants
 	api.VariantCreateVariantHandler = variant.CreateVariantHandlerFunc(c.CreateVariant)
-	api.VariantFindVariantsHandler = variant.FindVariantsHandlerFunc(c.FindVariants)
 	api.VariantPutVariantHandler = variant.PutVariantHandlerFunc(c.PutVariant)
 	api.VariantDeleteVariantHandler = variant.DeleteVariantHandlerFunc(c.DeleteVariant)
 }
